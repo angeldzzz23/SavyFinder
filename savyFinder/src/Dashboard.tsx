@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Button } from "./components/ui/button"
-import { AlertCircle, BarChart3, Compass, Crosshair, Layers, Menu, Radio, SeparatorHorizontal, Settings, Ship } from "lucide-react"
+import { AlertCircle, BarChart3, Compass, Crosshair, Image, Layers, Menu, Radio, SeparatorHorizontal, Settings, Ship } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./components/ui/tooltip"
 import { Progress } from "./components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs"
@@ -220,57 +220,24 @@ export default function Dashboard() {
           <div className="flex-1 relative">
             {/* Satellite Image (70% of screen) */}
             <div className="absolute inset-0 bg-slate-950">
-              <div className="absolute inset-0 bg-[url('/placeholder.svg?height=1080&width=1920')] bg-cover bg-center opacity-70">
-                {/* Overlay grid pattern for military aesthetic */}
-                <div className="absolute inset-0 bg-grid-slate-800/20"></div>
+              {/* Using Next.js Image component for better image handling */}
+              <div className="absolute inset-0 z-0">
+                <img
+                    src="/cbimage.png"
+                    alt="Satellite view"
+                    style={{ objectFit: "cover", opacity: 0.7, width: '100%', height: 'auto' }}
+                    />
+                                    {/* Overlay grid pattern for military aesthetic */}
+                <div className="absolute inset-0 bg-grid-slate-800/20 z-10"></div>
               </div>
   
               {/* Crosshair in center */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-teal-400/70">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-teal-400/70 z-20">
                 <Crosshair className="h-16 w-16" />
               </div>
   
-              {/* Ship markers with confidence indicators */}
-              {ships.map((ship) => (
-                <div
-                  key={ship.id}
-                  className="absolute flex flex-col items-center"
-                  style={{
-                    top: `${ship.y}%`,
-                    left: `${ship.x}%`,
-                  }}
-                >
-                  <div
-                    className={`h-2 w-2 ${ship.type === "friendly" ? "bg-teal-400" : "bg-amber-400"} rounded-full`}
-                  ></div>
-                  <div className={`text-xs font-mono mt-1 ${getConfidenceColor(ship.confidence)}`}>
-                    {ship.confidence.toFixed(0)}%
-                  </div>
-                  {/* Confidence ring */}
-                  <div
-                    className={`absolute -top-3 -left-3 w-8 h-8 rounded-full border ${getConfidenceColor(ship.confidence)} opacity-30`}
-                    style={{
-                      animation: "pulse 2s infinite",
-                    }}
-                  ></div>
-                </div>
-              ))}
-  
-              {/* Radar sweep animation */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px]">
-                <div className="absolute inset-0 rounded-full border border-teal-500/20"></div>
-                <div className="absolute inset-0 rounded-full border border-teal-500/10"></div>
-                <div
-                  className="absolute top-1/2 left-1/2 h-[50%] w-1 bg-gradient-to-t from-teal-500/60 to-transparent origin-bottom"
-                  style={{
-                    transform: "rotate(0deg) translateX(-50%)",
-                    animation: "radar-sweep 8s linear infinite",
-                  }}
-                ></div>
-              </div>
-  
               {/* Status indicators */}
-              <div className="absolute bottom-4 left-4 text-xs font-mono text-slate-300 space-y-1">
+              <div className="absolute bottom-4 left-4 text-xs font-mono text-slate-300 space-y-1 z-20">
                 <div>SCAN ACTIVE</div>
                 <div>TRACKING: {ships.length} VESSELS</div>
                 <div className="flex items-center gap-2">
@@ -282,7 +249,7 @@ export default function Dashboard() {
               </div>
   
               {/* Coordinates display */}
-              <div className="absolute bottom-4 right-4 text-xs font-mono text-slate-300 space-y-1">
+              <div className="absolute bottom-4 right-4 text-xs font-mono text-slate-300 space-y-1 z-20">
                 <div>ZOOM: 2.5x</div>
                 <div>SECTOR: PACIFIC-W</div>
                 <div>TIME: {new Date().toLocaleTimeString("en-US", { hour12: false })} UTC</div>
@@ -291,7 +258,7 @@ export default function Dashboard() {
   
             {/* Model Metrics Panel */}
             {showMetricsPanel && (
-              <div className="absolute top-4 right-4 w-80 bg-slate-800/90 backdrop-blur-sm border border-slate-700 rounded-md shadow-lg overflow-hidden">
+              <div className="absolute top-4 right-4 w-80 bg-slate-800/90 backdrop-blur-sm border border-slate-700 rounded-md shadow-lg overflow-hidden z-30">
                 <div className="px-4 py-3 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
                   <h3 className="font-semibold text-sm">MODEL PERFORMANCE METRICS</h3>
                   <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setShowMetricsPanel(false)}>
