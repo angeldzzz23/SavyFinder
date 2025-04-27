@@ -294,7 +294,7 @@ export default function Dashboard() {
               className="text-slate-300 border-slate-700 hover:bg-slate-700 mr-2"
               onClick={() => document.getElementById("background-upload").click()}
             >
-              Change Background
+              Detect
             </Button>
             <input
               type="file"
