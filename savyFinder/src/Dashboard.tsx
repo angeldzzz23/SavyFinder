@@ -6,6 +6,7 @@ import { Progress } from "./components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./components/ui/dialog"
 
+
 export default function Dashboard() {
   const [showModelDriftAlert, setShowModelDriftAlert] = useState(false)
   const [coordinates, setCoordinates] = useState({ lat: "32° 42' 54\" N", long: "117° 09' 45\" W" })
@@ -23,6 +24,9 @@ export default function Dashboard() {
   const [backgroundImage, setBackgroundImage] = useState("/cbimage.png")
   const [isLoading, setIsLoading] = useState(false)
   const [fileInputKey, setFileInputKey] = useState(0)
+  const [driftData, setDriftData] = useState(null)
+  const [showDriftPopup, setShowDriftPopup] = useState(false)
+  const [processedImage, setProcessedImage] = useState(null)
 
   // Model performance metrics
   const [metrics, setMetrics] = useState({
@@ -55,22 +59,50 @@ export default function Dashboard() {
   ])
 
   // Handle image upload
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0]
     if (file && file.type.startsWith("image/")) {
       setIsLoading(true)
 
-      // Create a URL for the uploaded image
+      // Create a URL for the uploaded image to display while processing
       const imageUrl = URL.createObjectURL(file)
+      setBackgroundImage(imageUrl)
 
-      // Simulate loading state for 2 seconds
-      setTimeout(() => {
-        setBackgroundImage(imageUrl)
+      // Create form data to send to the API
+      const formData = new FormData()
+      formData.append("image", file)
+
+      try {
+        const response = await fetch("https://seaship.mingjun.dev/detect", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log('data' + data);
+
+        // Check if drift is detected
+        if (data.drift && data.drift.is_drift) {
+          setDriftData(data.drift)
+          setShowDriftPopup(true)
+        }
+
+        // If there's a processed image returned, display it
+        if (data.image) {
+          setProcessedImage(`data:image/jpeg;base64,${data.image}`)
+          setBackgroundImage(`data:image/jpeg;base64,${data.image}`)
+        }
+      } catch (error) {
+        console.error("Error calling YOLO service:", error)
+      } finally {
         setIsLoading(false)
-      }, 2000)
-
-      // Reset the file input to allow uploading the same file again
-      setFileInputKey((prev) => prev + 1)
+        // Reset the file input to allow uploading the same file again
+        setFileInputKey((prev) => prev + 1)
+      }
     }
   }
 
@@ -90,11 +122,6 @@ export default function Dashboard() {
             confidence: Math.max(60, ship.confidence - Math.random() * 1.5),
           })),
         )
-
-        // Trigger alert when drift score exceeds threshold
-        if (newDriftScore > 25 && !showModelDriftAlert) {
-          setShowModelDriftAlert(true)
-        }
 
         return {
           ...prev,
@@ -235,6 +262,10 @@ export default function Dashboard() {
   const handleClosePopup = () => {
     setShowPopup(false)
     setShowRectangle(false)
+  }
+
+  const handleCloseDriftPopup = () => {
+    setShowDriftPopup(false)
   }
 
   return (
@@ -379,7 +410,7 @@ export default function Dashboard() {
                 <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
                   <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-600 border-t-teal-400"></div>
-                    <div className="text-teal-400 text-sm font-mono">LOADING SATELLITE IMAGE...</div>
+                    <div className="text-teal-400 text-sm font-mono">PROCESSING IMAGE...</div>
                   </div>
                 </div>
               ) : (
@@ -590,6 +621,70 @@ export default function Dashboard() {
                       </Button>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Drift Detection Popup */}
+          {showDriftPopup && driftData && (
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40 w-96 bg-slate-800/95 backdrop-blur-sm border border-red-500/50 rounded-md shadow-lg overflow-hidden">
+              <div className="px-4 py-3 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-red-400">
+                  <AlertTriangle className="h-4 w-4" />
+                  DRIFT DETECTED
+                </h3>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleCloseDriftPopup}>
+                  ×
+                </Button>
+              </div>
+              <div className="p-4 space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span>Distance</span>
+                    <span className="text-red-400">{driftData.distance.toFixed(4)}</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-red-500"
+                      style={{ width: `${Math.min(100, (driftData.distance / driftData.distance_threshold) * 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span>Threshold</span>
+                    <span className="text-amber-400">{driftData.distance_threshold.toFixed(4)}</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-amber-500"
+                      style={{ width: `${Math.min(100, (driftData.distance_threshold / driftData.distance) * 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-700/50 rounded p-2 text-xs">
+                  <div className="font-semibold mb-1">Drift Analysis</div>
+                  <p className="text-slate-300 text-[11px] leading-tight">
+                    Significant model drift detected. The current data distribution has deviated from the training
+                    distribution. P-value: {driftData.p_value.toFixed(6)} (Threshold: {driftData.threshold})
+                  </p>
+                </div>
+
+                <div className="flex justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-slate-100"
+                    onClick={handleCloseDriftPopup}
+                  >
+                    Dismiss
+                  </Button>
+                  <Button size="sm" className="bg-red-600 hover:bg-red-500 text-slate-100" onClick={handleModelRetrain}>
+                    Retrain Model
+                  </Button>
                 </div>
               </div>
             </div>
