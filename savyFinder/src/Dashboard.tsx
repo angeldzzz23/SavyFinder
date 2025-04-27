@@ -1,35 +1,63 @@
-import { useEffect, useRef, useState } from "react"
-import { Button } from "./components/ui/button"
-import { AlertCircle, BarChart3, Compass, Crosshair, Image, Layers, Menu, Radio, SeparatorHorizontal, Settings, Ship } from "lucide-react"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./components/ui/tooltip"
-import { Progress } from "./components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./components/ui/dialog"
-
+import {
+  AlertCircle,
+  AlertTriangle,
+  BarChart3,
+  Compass,
+  Crosshair,
+  Layers,
+  Menu,
+  Radio,
+  Settings,
+  Ship,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Button } from "./components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "./components/ui/dialog";
+import { Progress } from "./components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./components/ui/tooltip";
 
 export default function Dashboard() {
-  const [showModelDriftAlert, setShowModelDriftAlert] = useState(false)
-  const [coordinates, setCoordinates] = useState({ lat: "32° 42' 54\" N", long: "117° 09' 45\" W" })
-  const [showMetricsPanel, setShowMetricsPanel] = useState(false)
+  const [showModelDriftAlert, setShowModelDriftAlert] = useState(false);
+  const [coordinates, setCoordinates] = useState({
+    lat: "32° 42' 54\" N",
+    long: "117° 09' 45\" W",
+  });
+  const [showMetricsPanel, setShowMetricsPanel] = useState(false);
 
   // Rectangle drawing state
-  const [isDrawing, setIsDrawing] = useState(false)
-  const [rectangle, setRectangle] = useState({ startX: 0, startY: 0, width: 0, height: 0 })
-  const [showRectangle, setShowRectangle] = useState(false)
-  const [showPopup, setShowPopup] = useState(false)
-  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 })
-  const imageRef = useRef(null)
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [rectangle, setRectangle] = useState({
+    startX: 0,
+    startY: 0,
+    width: 0,
+    height: 0,
+  });
+  const [showRectangle, setShowRectangle] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  const imageRef = useRef(null);
 
   // Background image state
-  const [backgroundImage, setBackgroundImage] = useState("/cbimage.png")
-  const [isLoading, setIsLoading] = useState(false)
-  const [fileInputKey, setFileInputKey] = useState(0)
-  const [driftData, setDriftData] = useState(null)
-  const [showDriftPopup, setShowDriftPopup] = useState(false)
-  const [processedImage, setProcessedImage] = useState(null)
-  
+  const [backgroundImage, setBackgroundImage] = useState("/cbimage.png");
+  const [isLoading, setIsLoading] = useState(false);
+  const [fileInputKey, setFileInputKey] = useState(0);
+  const [driftData, setDriftData] = useState(null);
+  const [showDriftPopup, setShowDriftPopup] = useState(false);
+  const [processedImage, setProcessedImage] = useState(null);
+
   const handleNotesChange = (newNotes) => {
-    setAreaData(prev => ({
+    setAreaData((prev) => ({
       ...prev,
       notes: newNotes,
     }));
@@ -44,7 +72,7 @@ export default function Dashboard() {
     lastUpdated: "22:38:45",
     anomalies: 2,
     predictionLatency: 42,
-  })
+  });
 
   // Fake data for the popup
   const [areaData, setAreaData] = useState({
@@ -55,7 +83,7 @@ export default function Dashboard() {
     anomalies: 1,
     confidence: 87,
     notes: "",
-  })
+  });
 
   // Simulated ships with tracking confidence
   const [ships, setShips] = useState([
@@ -63,55 +91,70 @@ export default function Dashboard() {
     { id: 2, x: 60, y: 45, confidence: 94, type: "friendly" },
     { id: 3, x: 25, y: 60, confidence: 72, type: "unknown" },
     { id: 4, x: 75, y: 20, confidence: 88, type: "friendly" },
-  ])
+  ]);
 
   // Handle image upload
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0]
+    const file = e.target.files[0];
     if (file && file.type.startsWith("image/")) {
-      setIsLoading(true)
+      setIsLoading(true);
 
       // Create a URL for the uploaded image to display while processing
-      const imageUrl = URL.createObjectURL(file)
-      setBackgroundImage(imageUrl)
+      const imageUrl = URL.createObjectURL(file);
+      setBackgroundImage(imageUrl);
 
       // Create form data to send to the API
-      const formData = new FormData()
-      formData.append("image", file)
+      const formData = new FormData();
+      formData.append("image", file);
 
       try {
-        const response = await fetch("https://seaship.mingjun.dev/detect", {
+        const response = await fetch("http://127.0.0.1:8080/detect", {
           method: "POST",
           body: formData,
-        })
+        });
 
         if (!response.ok) {
-          throw new Error(`API request failed with status ${response.status}`)
+          throw new Error(`API request failed with status ${response.status}`);
         }
 
-        const data = await response.json()
-        console.log('data' + data);
+        const data = await response.json();
+        console.log("detection data" + data);
+
+        const driftDetectionResponse = await fetch(
+          "http://127.0.0.1:8080/detect_drift",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const driftData = await driftDetectionResponse.json();
+        console.log("drift data" + driftData);
 
         // Check if drift is detected
-        if (data.drift && data.drift.is_drift) {
-          setDriftData(data.drift)
-          setShowDriftPopup(true)
+        if (driftData.is_drift) {
+          setDriftData(driftData);
+          setShowModelDriftAlert(true);
         }
 
         // If there's a processed image returned, display it
         if (data.image) {
-          setProcessedImage(`data:image/jpeg;base64,${data.image}`)
-          setBackgroundImage(`data:image/jpeg;base64,${data.image}`)
+          setProcessedImage(`data:image/jpeg;base64,${data.image}`);
+          setBackgroundImage(`data:image/jpeg;base64,${data.image}`);
         }
       } catch (error) {
-        console.error("Error calling YOLO service:", error)
+        console.error("Error calling YOLO service:", error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
         // Reset the file input to allow uploading the same file again
-        setFileInputKey((prev) => prev + 1)
+        setFileInputKey((prev) => prev + 1);
       }
     }
-  }
+  };
 
   // Simulate model drift detection
   useEffect(() => {
@@ -119,32 +162,37 @@ export default function Dashboard() {
     const driftInterval = setInterval(() => {
       setMetrics((prev) => {
         // Randomly decrease metrics slightly
-        const newDriftScore = Math.min(100, prev.driftScore + Math.random() * 2)
-        const newAccuracy = Math.max(70, prev.accuracy - Math.random() * 0.5)
+        const newDriftScore = Math.min(
+          100,
+          prev.driftScore + Math.random() * 2
+        );
+        const newAccuracy = Math.max(70, prev.accuracy - Math.random() * 0.5);
 
         // Update ship confidence levels
         setShips((ships) =>
           ships.map((ship) => ({
             ...ship,
             confidence: Math.max(60, ship.confidence - Math.random() * 1.5),
-          })),
-        )
+          }))
+        );
 
         return {
           ...prev,
           accuracy: newAccuracy,
           driftScore: newDriftScore,
-          lastUpdated: new Date().toLocaleTimeString("en-US", { hour12: false }),
-        }
-      })
-    }, 5000)
+          lastUpdated: new Date().toLocaleTimeString("en-US", {
+            hour12: false,
+          }),
+        };
+      });
+    }, 5000);
 
-    return () => clearInterval(driftInterval)
-  }, [showModelDriftAlert])
+    return () => clearInterval(driftInterval);
+  }, [showModelDriftAlert]);
 
   // Handle model retraining
   const handleModelRetrain = () => {
-    setShowModelDriftAlert(false)
+    setShowModelDriftAlert(false);
 
     // Reset metrics after "retraining"
     setMetrics((prev) => ({
@@ -155,121 +203,124 @@ export default function Dashboard() {
       driftScore: 5,
       lastUpdated: new Date().toLocaleTimeString("en-US", { hour12: false }),
       anomalies: 0,
-    }))
+    }));
 
     // Reset ship confidence
     setShips((ships) =>
       ships.map((ship) => ({
         ...ship,
         confidence: Math.min(98, ship.confidence + 20),
-      })),
-    )
-  }
+      }))
+    );
+  };
 
   // Toggle the model drift alert for demonstration
   const toggleModelDriftAlert = () => {
-    setShowModelDriftAlert(!showModelDriftAlert)
-  }
+    setShowModelDriftAlert(!showModelDriftAlert);
+  };
 
   // Get color based on confidence level
   const getConfidenceColor = (confidence) => {
-    if (confidence > 90) return "text-emerald-400"
-    if (confidence > 80) return "text-teal-400"
-    if (confidence > 70) return "text-blue-400"
-    return "text-amber-400"
-  }
+    if (confidence > 90) return "text-emerald-400";
+    if (confidence > 80) return "text-teal-400";
+    if (confidence > 70) return "text-blue-400";
+    return "text-amber-400";
+  };
 
   // Get color for drift score
   const getDriftScoreColor = (score) => {
-    if (score < 10) return "bg-emerald-500"
-    if (score < 20) return "bg-blue-500"
-    if (score < 30) return "bg-amber-500"
-    return "bg-red-500"
-  }
+    if (score < 10) return "bg-emerald-500";
+    if (score < 20) return "bg-blue-500";
+    if (score < 30) return "bg-amber-500";
+    return "bg-red-500";
+  };
 
   // Get color for threat level
   const getThreatLevelColor = (level) => {
-    if (level === "Low") return "text-emerald-400"
-    if (level === "Medium") return "text-amber-400"
-    if (level === "High") return "text-red-400"
-    return "text-blue-400"
-  }
+    if (level === "Low") return "text-emerald-400";
+    if (level === "Medium") return "text-amber-400";
+    if (level === "High") return "text-red-400";
+    return "text-blue-400";
+  };
 
   // Handle mouse down for rectangle drawing
   const handleMouseDown = (e) => {
-    if (!imageRef.current) return
+    if (!imageRef.current) return;
 
-    const rect = imageRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    const rect = imageRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-    setRectangle({ startX: x, startY: y, width: 0, height: 0 })
-    setIsDrawing(true)
-  }
+    setRectangle({ startX: x, startY: y, width: 0, height: 0 });
+    setIsDrawing(true);
+  };
 
   // Handle mouse move for rectangle drawing
   const handleMouseMove = (e) => {
-    if (!isDrawing || !imageRef.current) return
+    if (!isDrawing || !imageRef.current) return;
 
-    const rect = imageRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    const rect = imageRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
     setRectangle((prev) => ({
       ...prev,
       width: x - prev.startX,
       height: y - prev.startY,
-    }))
-  }
+    }));
+  };
 
   // Handle mouse up for rectangle drawing
   const handleMouseUp = (e) => {
-    if (!isDrawing) return
+    if (!isDrawing) return;
 
-    setIsDrawing(false)
+    setIsDrawing(false);
 
     // Only show rectangle and popup if it has some size
     if (Math.abs(rectangle.width) > 20 && Math.abs(rectangle.height) > 20) {
-      setShowRectangle(true)
+      setShowRectangle(true);
 
       // Position popup near the rectangle
-      const popupX = rectangle.startX + (rectangle.width > 0 ? rectangle.width : 0)
-      const popupY = rectangle.startY + (rectangle.height > 0 ? rectangle.height : 0)
+      const popupX =
+        rectangle.startX + (rectangle.width > 0 ? rectangle.width : 0);
+      const popupY =
+        rectangle.startY + (rectangle.height > 0 ? rectangle.height : 0);
 
-      setPopupPosition({ x: popupX, y: popupY })
+      setPopupPosition({ x: popupX, y: popupY });
 
       // Generate random data for the area
       setAreaData({
-        areaId: `SECTOR-${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(Math.random() * 100)}`,
+        areaId: `SECTOR-${String.fromCharCode(
+          65 + Math.floor(Math.random() * 26)
+        )}${Math.floor(Math.random() * 100)}`,
         threatLevel: ["Low", "Medium", "High"][Math.floor(Math.random() * 3)],
         vessels: Math.floor(Math.random() * 5) + 1,
         lastScan: new Date().toLocaleTimeString("en-US", { hour12: false }),
         anomalies: Math.floor(Math.random() * 3),
         confidence: Math.floor(Math.random() * 30) + 70,
-        notes: ["",
-        ][Math.floor(Math.random() * 4)],
-      })
+        notes: [""][Math.floor(Math.random() * 4)],
+      });
 
-      setShowPopup(true)
+      setShowPopup(true);
     }
-  }
+  };
 
   // Handle mouse leave for rectangle drawing
   const handleMouseLeave = () => {
     if (isDrawing) {
-      setIsDrawing(false)
+      setIsDrawing(false);
     }
-  }
+  };
 
   // Close the popup and reset rectangle
   const handleClosePopup = () => {
-    setShowPopup(false)
-    setShowRectangle(false)
-  }
+    setShowPopup(false);
+    setShowRectangle(false);
+  };
 
   const handleCloseDriftPopup = () => {
-    setShowDriftPopup(false)
-  }
+    setShowDriftPopup(false);
+  };
 
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-slate-100 overflow-hidden">
@@ -279,7 +330,9 @@ export default function Dashboard() {
           <Button variant="ghost" size="icon" className="text-slate-300">
             <Menu className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-bold tracking-tight">NAVAL COMMAND SYSTEM</h1>
+          <h1 className="text-lg font-bold tracking-tight">
+            NAVAL COMMAND SYSTEM
+          </h1>
         </div>
         <div className="flex items-center gap-2">
           <div className="text-xs text-slate-400 mr-4">
@@ -292,7 +345,9 @@ export default function Dashboard() {
               variant="outline"
               size="sm"
               className="text-slate-300 border-slate-700 hover:bg-slate-700 mr-2"
-              onClick={() => document.getElementById("background-upload").click()}
+              onClick={() =>
+                document.getElementById("background-upload").click()
+              }
             >
               Detect
             </Button>
@@ -367,7 +422,9 @@ export default function Dashboard() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`${showMetricsPanel ? "text-teal-400" : "text-slate-300"}`}
+                  className={`${
+                    showMetricsPanel ? "text-teal-400" : "text-slate-300"
+                  }`}
                   onClick={() => setShowMetricsPanel(!showMetricsPanel)}
                 >
                   <BarChart3 className="h-5 w-5" />
@@ -383,7 +440,9 @@ export default function Dashboard() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`${showModelDriftAlert ? "text-amber-400" : "text-slate-300"}`}
+                  className={`${
+                    showModelDriftAlert ? "text-amber-400" : "text-slate-300"
+                  }`}
                   onClick={toggleModelDriftAlert}
                 >
                   <AlertCircle className="h-5 w-5" />
@@ -413,14 +472,21 @@ export default function Dashboard() {
                 <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
                   <div className="flex flex-col items-center gap-3">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-600 border-t-teal-400"></div>
-                    <div className="text-teal-400 text-sm font-mono">PROCESSING IMAGE...</div>
+                    <div className="text-teal-400 text-sm font-mono">
+                      PROCESSING IMAGE...
+                    </div>
                   </div>
                 </div>
               ) : (
                 <img
                   src={backgroundImage || "/placeholder.svg"}
                   alt="Satellite view"
-                  style={{ objectFit: "cover", opacity: 0.7, width: "100%", height: "100%" }}
+                  style={{
+                    objectFit: "cover",
+                    opacity: 0.7,
+                    width: "100%",
+                    height: "100%",
+                  }}
                 />
               )}
               <div className="absolute inset-0 bg-slate-800/20 z-10"></div>
@@ -431,8 +497,14 @@ export default function Dashboard() {
               <div
                 className="absolute border-2 border-teal-400/70 bg-teal-500/10 z-20"
                 style={{
-                  left: rectangle.width > 0 ? rectangle.startX : rectangle.startX + rectangle.width,
-                  top: rectangle.height > 0 ? rectangle.startY : rectangle.startY + rectangle.height,
+                  left:
+                    rectangle.width > 0
+                      ? rectangle.startX
+                      : rectangle.startX + rectangle.width,
+                  top:
+                    rectangle.height > 0
+                      ? rectangle.startY
+                      : rectangle.startY + rectangle.height,
                   width: Math.abs(rectangle.width),
                   height: Math.abs(rectangle.height),
                 }}
@@ -456,7 +528,13 @@ export default function Dashboard() {
               <div>TRACKING: {ships.length} VESSELS</div>
               <div className="flex items-center gap-2">
                 <span>MODEL STATUS:</span>
-                <span className={metrics.driftScore > 20 ? "text-amber-400" : "text-emerald-400"}>
+                <span
+                  className={
+                    metrics.driftScore > 20
+                      ? "text-amber-400"
+                      : "text-emerald-400"
+                  }
+                >
                   {metrics.driftScore > 20 ? "DRIFT DETECTED" : "NOMINAL"}
                 </span>
               </div>
@@ -466,7 +544,10 @@ export default function Dashboard() {
             <div className="absolute bottom-4 right-4 text-xs font-mono text-slate-300 space-y-1 z-20">
               <div>ZOOM: 2.5x</div>
               <div>SECTOR: PACIFIC-W</div>
-              <div>TIME: {new Date().toLocaleTimeString("en-US", { hour12: false })} UTC</div>
+              <div>
+                TIME:{" "}
+                {new Date().toLocaleTimeString("en-US", { hour12: false })} UTC
+              </div>
             </div>
 
             {/* Drawing instructions */}
@@ -479,8 +560,15 @@ export default function Dashboard() {
           {showMetricsPanel && (
             <div className="absolute top-4 right-4 w-80 bg-slate-800/90 backdrop-blur-sm border border-slate-700 rounded-md shadow-lg overflow-hidden z-30">
               <div className="px-4 py-3 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
-                <h3 className="font-semibold text-sm">MODEL PERFORMANCE METRICS</h3>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setShowMetricsPanel(false)}>
+                <h3 className="font-semibold text-sm">
+                  MODEL PERFORMANCE METRICS
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => setShowMetricsPanel(false)}
+                >
                   ×
                 </Button>
               </div>
@@ -494,21 +582,27 @@ export default function Dashboard() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs">
                         <span>Accuracy</span>
-                        <span className={getConfidenceColor(metrics.accuracy)}>{metrics.accuracy.toFixed(1)}%</span>
+                        <span className={getConfidenceColor(metrics.accuracy)}>
+                          {metrics.accuracy.toFixed(1)}%
+                        </span>
                       </div>
                       <Progress value={metrics.accuracy} className="h-1" />
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs">
                         <span>Precision</span>
-                        <span className={getConfidenceColor(metrics.precision)}>{metrics.precision.toFixed(1)}%</span>
+                        <span className={getConfidenceColor(metrics.precision)}>
+                          {metrics.precision.toFixed(1)}%
+                        </span>
                       </div>
                       <Progress value={metrics.precision} className="h-1" />
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs">
                         <span>Recall</span>
-                        <span className={getConfidenceColor(metrics.recall)}>{metrics.recall.toFixed(1)}%</span>
+                        <span className={getConfidenceColor(metrics.recall)}>
+                          {metrics.recall.toFixed(1)}%
+                        </span>
                       </div>
                       <Progress value={metrics.recall} className="h-1" />
                     </div>
@@ -531,13 +625,21 @@ export default function Dashboard() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs">
                         <span>Drift Score</span>
-                        <span className={metrics.driftScore > 20 ? "text-amber-400" : "text-emerald-400"}>
+                        <span
+                          className={
+                            metrics.driftScore > 20
+                              ? "text-amber-400"
+                              : "text-emerald-400"
+                          }
+                        >
                           {metrics.driftScore.toFixed(1)}%
                         </span>
                       </div>
                       <div className="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
                         <div
-                          className={`h-full ${getDriftScoreColor(metrics.driftScore)}`}
+                          className={`h-full ${getDriftScoreColor(
+                            metrics.driftScore
+                          )}`}
                           style={{ width: `${metrics.driftScore}%` }}
                         ></div>
                       </div>
@@ -559,7 +661,8 @@ export default function Dashboard() {
 
                     <div className="flex justify-between text-xs text-slate-400">
                       <div>
-                        Baseline Version: <span className="text-slate-300">v2.4.1</span>
+                        Baseline Version:{" "}
+                        <span className="text-slate-300">v2.4.1</span>
                       </div>
                       <div>
                         Age: <span className="text-slate-300">3d 14h</span>
@@ -593,7 +696,9 @@ export default function Dashboard() {
                   <div className="space-y-2 flex-1">
                     <div>
                       <div className="flex justify-between items-start">
-                        <h3 className="text-sm font-medium text-slate-100/90">Model drift detected</h3>
+                        <h3 className="text-sm font-medium text-slate-100/90">
+                          Model drift detected
+                        </h3>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -603,7 +708,9 @@ export default function Dashboard() {
                           <span className="sr-only">Close</span>×
                         </Button>
                       </div>
-                      <p className="text-xs text-slate-300/80 mt-0.5">Confirm to set new baseline?</p>
+                      <p className="text-xs text-slate-300/80 mt-0.5">
+                        Confirm to set new baseline?
+                      </p>
                     </div>
 
                     <div className="flex gap-2 justify-end">
@@ -637,7 +744,12 @@ export default function Dashboard() {
                   <AlertTriangle className="h-4 w-4" />
                   DRIFT DETECTED
                 </h3>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleCloseDriftPopup}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={handleCloseDriftPopup}
+                >
                   ×
                 </Button>
               </div>
@@ -645,12 +757,20 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
                     <span>Distance</span>
-                    <span className="text-red-400">{driftData.distance.toFixed(4)}</span>
+                    <span className="text-red-400">
+                      {driftData.distance.toFixed(4)}
+                    </span>
                   </div>
                   <div className="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-red-500"
-                      style={{ width: `${Math.min(100, (driftData.distance / driftData.distance_threshold) * 100)}%` }}
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          (driftData.distance / driftData.distance_threshold) *
+                            100
+                        )}%`,
+                      }}
                     ></div>
                   </div>
                 </div>
@@ -658,12 +778,20 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
                     <span>Threshold</span>
-                    <span className="text-amber-400">{driftData.distance_threshold.toFixed(4)}</span>
+                    <span className="text-amber-400">
+                      {driftData.distance_threshold.toFixed(4)}
+                    </span>
                   </div>
                   <div className="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-amber-500"
-                      style={{ width: `${Math.min(100, (driftData.distance_threshold / driftData.distance) * 100)}%` }}
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          (driftData.distance_threshold / driftData.distance) *
+                            100
+                        )}%`,
+                      }}
                     ></div>
                   </div>
                 </div>
@@ -671,8 +799,10 @@ export default function Dashboard() {
                 <div className="bg-slate-700/50 rounded p-2 text-xs">
                   <div className="font-semibold mb-1">Drift Analysis</div>
                   <p className="text-slate-300 text-[11px] leading-tight">
-                    Significant model drift detected. The current data distribution has deviated from the training
-                    distribution. P-value: {driftData.p_value.toFixed(6)} (Threshold: {driftData.threshold})
+                    Significant model drift detected. The current data
+                    distribution has deviated from the training distribution.
+                    P-value: {driftData.p_value.toFixed(6)} (Threshold:{" "}
+                    {driftData.threshold})
                   </p>
                 </div>
 
@@ -685,7 +815,11 @@ export default function Dashboard() {
                   >
                     Dismiss
                   </Button>
-                  <Button size="sm" className="bg-red-600 hover:bg-red-500 text-slate-100" onClick={handleModelRetrain}>
+                  <Button
+                    size="sm"
+                    className="bg-red-600 hover:bg-red-500 text-slate-100"
+                    onClick={handleModelRetrain}
+                  >
                     Retrain Model
                   </Button>
                 </div>
@@ -699,31 +833,28 @@ export default function Dashboard() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-teal-400">
                   <div className="w-3 h-3 rounded-full bg-teal-400"></div>
-                   Add undected area
+                  Add undected area
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                  </div>
+                  <div className="space-y-1"></div>
                 </div>
 
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    
-                  </div>
+                  <div className="flex items-center gap-2"></div>
                 </div>
 
                 <div className="space-y-1">
-                    <div className="text-xs text-slate-400">Analysis Notes</div>
-                    <textarea
-                        className="w-full bg-slate-700/50 p-2 rounded text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none"
-                        rows={3}
-                        placeholder="Describe the missed detection..."
-                        value={areaData.notes}
-                        onChange={(e) => handleNotesChange(e.target.value)}
-                    />
-                    </div>
+                  <div className="text-xs text-slate-400">Analysis Notes</div>
+                  <textarea
+                    className="w-full bg-slate-700/50 p-2 rounded text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none"
+                    rows={3}
+                    placeholder="Describe the missed detection..."
+                    value={areaData.notes}
+                    onChange={(e) => handleNotesChange(e.target.value)}
+                  />
+                </div>
 
                 <div className="flex justify-between">
                   <Button
@@ -734,8 +865,11 @@ export default function Dashboard() {
                   >
                     Close
                   </Button>
-                  <Button size="sm" className="bg-teal-600 hover:bg-teal-500 text-slate-100">
-                   Add
+                  <Button
+                    size="sm"
+                    className="bg-teal-600 hover:bg-teal-500 text-slate-100"
+                  >
+                    Add
                   </Button>
                 </div>
               </div>
@@ -744,5 +878,5 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
-  )
+  );
 }
