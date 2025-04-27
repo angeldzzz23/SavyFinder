@@ -6,14 +6,6 @@ import { Progress } from "./components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./components/ui/dialog"
 
-// import { useState, useEffect, useRef } from "react"
-// import { Menu, Settings, Ship, Compass, Layers, Radio, BarChart3, AlertCircle, Crosshair } from "lucide-react"
-// import { Button } from "@/components/ui/button"
-// import { Progress } from "@/components/ui/progress"
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-// import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-// import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
-
 export default function Dashboard() {
   const [showModelDriftAlert, setShowModelDriftAlert] = useState(false)
   const [coordinates, setCoordinates] = useState({ lat: "32° 42' 54\" N", long: "117° 09' 45\" W" })
