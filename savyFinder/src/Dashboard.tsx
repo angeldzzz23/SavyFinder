@@ -525,17 +525,16 @@ export default function Dashboard() {
             {/* Status indicators */}
             <div className="absolute bottom-4 left-4 text-xs font-mono text-slate-300 space-y-1 z-20">
               <div>SCAN ACTIVE</div>
-              <div>TRACKING: {ships.length} VESSELS</div>
               <div className="flex items-center gap-2">
                 <span>MODEL STATUS:</span>
                 <span
                   className={
-                    metrics.driftScore > 20
+                    driftData 
                       ? "text-amber-400"
                       : "text-emerald-400"
                   }
                 >
-                  {metrics.driftScore > 20 ? "DRIFT DETECTED" : "NOMINAL"}
+                  { driftData ? "DRIFT DETECTED" : "NOMINAL"}
                 </span>
               </div>
             </div>
