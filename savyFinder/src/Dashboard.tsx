@@ -27,6 +27,13 @@ export default function Dashboard() {
   const [driftData, setDriftData] = useState(null)
   const [showDriftPopup, setShowDriftPopup] = useState(false)
   const [processedImage, setProcessedImage] = useState(null)
+  
+  const handleNotesChange = (newNotes) => {
+    setAreaData(prev => ({
+      ...prev,
+      notes: newNotes,
+    }));
+  };
 
   // Model performance metrics
   const [metrics, setMetrics] = useState({
@@ -47,7 +54,7 @@ export default function Dashboard() {
     lastScan: "22:45:12",
     anomalies: 1,
     confidence: 87,
-    notes: "Unusual vessel movement patterns detected. Recommend increased surveillance.",
+    notes: "",
   })
 
   // Simulated ships with tracking confidence
@@ -239,11 +246,7 @@ export default function Dashboard() {
         lastScan: new Date().toLocaleTimeString("en-US", { hour12: false }),
         anomalies: Math.floor(Math.random() * 3),
         confidence: Math.floor(Math.random() * 30) + 70,
-        notes: [
-          "Unusual vessel movement patterns detected. Recommend increased surveillance.",
-          "Normal maritime traffic observed. No action required.",
-          "Potential unauthorized vessel detected. Verification needed.",
-          "High-speed vessel approaching restricted zone. Alert coastal guard.",
+        notes: ["",
         ][Math.floor(Math.random() * 4)],
       })
 
@@ -696,50 +699,31 @@ export default function Dashboard() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-teal-400">
                   <div className="w-3 h-3 rounded-full bg-teal-400"></div>
-                  Area Analysis: {areaData.areaId}
+                   Add undected area
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <div className="text-xs text-slate-400">Threat Level</div>
-                    <div className={`text-sm font-medium ${getThreatLevelColor(areaData.threatLevel)}`}>
-                      {areaData.threatLevel}
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs text-slate-400">Vessels Detected</div>
-                    <div className="text-sm font-medium">{areaData.vessels}</div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs text-slate-400">Last Scan</div>
-                    <div className="text-sm font-mono">{areaData.lastScan}</div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs text-slate-400">Anomalies</div>
-                    <div className="text-sm font-medium">{areaData.anomalies}</div>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <div className="text-xs text-slate-400">Confidence Score</div>
                   <div className="flex items-center gap-2">
-                    <div className={`text-sm font-medium ${getConfidenceColor(areaData.confidence)}`}>
-                      {areaData.confidence}%
-                    </div>
-                    <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${areaData.confidence > 90 ? "bg-emerald-500" : areaData.confidence > 80 ? "bg-teal-500" : areaData.confidence > 70 ? "bg-blue-500" : "bg-amber-500"}`}
-                        style={{ width: `${areaData.confidence}%` }}
-                      ></div>
-                    </div>
+                    
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <div className="text-xs text-slate-400">Analysis Notes</div>
-                  <div className="text-sm bg-slate-700/50 p-2 rounded">{areaData.notes}</div>
-                </div>
+                    <div className="text-xs text-slate-400">Analysis Notes</div>
+                    <textarea
+                        className="w-full bg-slate-700/50 p-2 rounded text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none"
+                        rows={3}
+                        placeholder="Describe the missed detection..."
+                        value={areaData.notes}
+                        onChange={(e) => handleNotesChange(e.target.value)}
+                    />
+                    </div>
 
                 <div className="flex justify-between">
                   <Button
@@ -751,7 +735,7 @@ export default function Dashboard() {
                     Close
                   </Button>
                   <Button size="sm" className="bg-teal-600 hover:bg-teal-500 text-slate-100">
-                    Monitor Area
+                   Add
                   </Button>
                 </div>
               </div>
