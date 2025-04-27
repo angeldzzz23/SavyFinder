@@ -49,7 +49,7 @@ export default function Dashboard() {
   const imageRef = useRef(null);
 
   // Background image state
-  const [backgroundImage, setBackgroundImage] = useState("/cbimage.png");
+  const [backgroundImage, setBackgroundImage] = useState("/satellite-view.jpg");
   const [isLoading, setIsLoading] = useState(false);
   const [fileInputKey, setFileInputKey] = useState(0);
   const [driftData, setDriftData] = useState(null);
