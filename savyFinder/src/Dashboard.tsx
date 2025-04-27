@@ -1,15 +1,22 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "./components/ui/button"
 import { AlertCircle, BarChart3, Compass, Crosshair, Image, Layers, Menu, Radio, SeparatorHorizontal, Settings, Ship } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./components/ui/tooltip"
 import { Progress } from "./components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs"
-
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./components/ui/dialog"
 export default function Dashboard() {
     const [showModelDriftAlert, setShowModelDriftAlert] = useState(false)
     const [coordinates, setCoordinates] = useState({ lat: "32° 42' 54\" N", long: "117° 09' 45\" W" })
     const [showMetricsPanel, setShowMetricsPanel] = useState(false)
+  
+    // Rectangle drawing state
+    const [isDrawing, setIsDrawing] = useState(false)
+    const [rectangle, setRectangle] = useState({ startX: 0, startY: 0, width: 0, height: 0 })
+    const [showRectangle, setShowRectangle] = useState(false)
+    const [showPopup, setShowPopup] = useState(false)
+    const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 })
+    const imageRef = useRef(null)
   
     // Model performance metrics
     const [metrics, setMetrics] = useState({
@@ -20,6 +27,17 @@ export default function Dashboard() {
       lastUpdated: "22:38:45",
       anomalies: 2,
       predictionLatency: 42,
+    })
+  
+    // Fake data for the popup
+    const [areaData, setAreaData] = useState({
+      areaId: "SECTOR-A42",
+      threatLevel: "Medium",
+      vessels: 3,
+      lastScan: "22:45:12",
+      anomalies: 1,
+      confidence: 87,
+      notes: "Unusual vessel movement patterns detected. Recommend increased surveillance.",
     })
   
     // Simulated ships with tracking confidence
@@ -109,6 +127,90 @@ export default function Dashboard() {
       return "bg-red-500"
     }
   
+    // Get color for threat level
+    const getThreatLevelColor = (level) => {
+      if (level === "Low") return "text-emerald-400"
+      if (level === "Medium") return "text-amber-400"
+      if (level === "High") return "text-red-400"
+      return "text-blue-400"
+    }
+  
+    // Handle mouse down for rectangle drawing
+    const handleMouseDown = (e) => {
+      if (!imageRef.current) return
+  
+      const rect = imageRef.current.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+  
+      setRectangle({ startX: x, startY: y, width: 0, height: 0 })
+      setIsDrawing(true)
+    }
+  
+    // Handle mouse move for rectangle drawing
+    const handleMouseMove = (e) => {
+      if (!isDrawing || !imageRef.current) return
+  
+      const rect = imageRef.current.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+  
+      setRectangle((prev) => ({
+        ...prev,
+        width: x - prev.startX,
+        height: y - prev.startY,
+      }))
+    }
+  
+    // Handle mouse up for rectangle drawing
+    const handleMouseUp = (e) => {
+      if (!isDrawing) return
+  
+      setIsDrawing(false)
+  
+      // Only show rectangle and popup if it has some size
+      if (Math.abs(rectangle.width) > 20 && Math.abs(rectangle.height) > 20) {
+        setShowRectangle(true)
+  
+        // Position popup near the rectangle
+        const popupX = rectangle.startX + (rectangle.width > 0 ? rectangle.width : 0)
+        const popupY = rectangle.startY + (rectangle.height > 0 ? rectangle.height : 0)
+  
+        setPopupPosition({ x: popupX, y: popupY })
+  
+        // Generate random data for the area
+        setAreaData({
+          areaId: `SECTOR-${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(Math.random() * 100)}`,
+          threatLevel: ["Low", "Medium", "High"][Math.floor(Math.random() * 3)],
+          vessels: Math.floor(Math.random() * 5) + 1,
+          lastScan: new Date().toLocaleTimeString("en-US", { hour12: false }),
+          anomalies: Math.floor(Math.random() * 3),
+          confidence: Math.floor(Math.random() * 30) + 70,
+          notes: [
+            "Unusual vessel movement patterns detected. Recommend increased surveillance.",
+            "Normal maritime traffic observed. No action required.",
+            "Potential unauthorized vessel detected. Verification needed.",
+            "High-speed vessel approaching restricted zone. Alert coastal guard.",
+          ][Math.floor(Math.random() * 4)],
+        })
+  
+        setShowPopup(true)
+      }
+    }
+  
+    // Handle mouse leave for rectangle drawing
+    const handleMouseLeave = () => {
+      if (isDrawing) {
+        setIsDrawing(false)
+      }
+    }
+  
+    // Close the popup and reset rectangle
+    const handleClosePopup = () => {
+      setShowPopup(false)
+      setShowRectangle(false)
+    }
+  
     return (
       <div className="flex flex-col h-screen bg-slate-900 text-slate-100 overflow-hidden">
         {/* Top Navigation Bar */}
@@ -180,7 +282,7 @@ export default function Dashboard() {
                 </TooltipContent>
               </Tooltip>
   
-              <SeparatorHorizontal className="my-2 w-8 bg-slate-700" />
+              <div className="my-2 w-8 bg-slate-700 h-px" />
   
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -219,16 +321,42 @@ export default function Dashboard() {
           {/* Main Satellite View */}
           <div className="flex-1 relative">
             {/* Satellite Image (70% of screen) */}
-            <div className="absolute inset-0 bg-slate-950">
+            <div
+              className="absolute inset-0 bg-slate-950"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+              ref={imageRef}
+            >
               {/* Using Next.js Image component for better image handling */}
               <div className="absolute inset-0 z-0">
                 <img
-                    src="/cbimage.png"
-                    alt="Satellite view"
-                    style={{ objectFit: "cover", opacity: 0.7, width:  'auto', height: 'auto' }}
-                    />
-                <div className="absolute inset-0 bg-grid-slate-800/20 z-10"></div>
+                  src="/cbimage.png"
+                  alt="Satellite view"
+                  style={{ objectFit: "cover", opacity: 0.7, width: "100%", height: "100%" }}
+                />
+                <div className="absolute inset-0 bg-slate-800/20 z-10"></div>
               </div>
+  
+              {/* Drawing rectangle */}
+              {(isDrawing || showRectangle) && (
+                <div
+                  className="absolute border-2 border-teal-400/70 bg-teal-500/10 z-20"
+                  style={{
+                    left: rectangle.width > 0 ? rectangle.startX : rectangle.startX + rectangle.width,
+                    top: rectangle.height > 0 ? rectangle.startY : rectangle.startY + rectangle.height,
+                    width: Math.abs(rectangle.width),
+                    height: Math.abs(rectangle.height),
+                  }}
+                >
+                  {showRectangle && (
+                    <div className="absolute top-0 left-0 bg-slate-800/80 text-teal-400 text-xs px-2 py-1 font-mono">
+                      {areaData.areaId}
+                    </div>
+                  )}
+                </div>
+              )}
   
               {/* Crosshair in center */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-teal-400/70 z-20">
@@ -252,6 +380,11 @@ export default function Dashboard() {
                 <div>ZOOM: 2.5x</div>
                 <div>SECTOR: PACIFIC-W</div>
                 <div>TIME: {new Date().toLocaleTimeString("en-US", { hour12: false })} UTC</div>
+              </div>
+  
+              {/* Drawing instructions */}
+              <div className="absolute top-4 left-4 text-xs font-mono text-slate-300 bg-slate-800/70 px-3 py-2 rounded z-20">
+                CLICK AND DRAG TO SELECT AREA FOR ANALYSIS
               </div>
             </div>
   
@@ -408,9 +541,76 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
+  
+            {/* Area Analysis Popup */}
+            <Dialog open={showPopup} onOpenChange={setShowPopup}>
+              <DialogContent className="bg-slate-800/95 backdrop-blur-sm border border-slate-700 text-slate-100 max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-teal-400">
+                    <div className="w-3 h-3 rounded-full bg-teal-400"></div>
+                    Area Analysis: {areaData.areaId}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <div className="text-xs text-slate-400">Threat Level</div>
+                      <div className={`text-sm font-medium ${getThreatLevelColor(areaData.threatLevel)}`}>
+                        {areaData.threatLevel}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-xs text-slate-400">Vessels Detected</div>
+                      <div className="text-sm font-medium">{areaData.vessels}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-xs text-slate-400">Last Scan</div>
+                      <div className="text-sm font-mono">{areaData.lastScan}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-xs text-slate-400">Anomalies</div>
+                      <div className="text-sm font-medium">{areaData.anomalies}</div>
+                    </div>
+                  </div>
+  
+                  <div className="space-y-1">
+                    <div className="text-xs text-slate-400">Confidence Score</div>
+                    <div className="flex items-center gap-2">
+                      <div className={`text-sm font-medium ${getConfidenceColor(areaData.confidence)}`}>
+                        {areaData.confidence}%
+                      </div>
+                      <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${areaData.confidence > 90 ? "bg-emerald-500" : areaData.confidence > 80 ? "bg-teal-500" : areaData.confidence > 70 ? "bg-blue-500" : "bg-amber-500"}`}
+                          style={{ width: `${areaData.confidence}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+  
+                  <div className="space-y-1">
+                    <div className="text-xs text-slate-400">Analysis Notes</div>
+                    <div className="text-sm bg-slate-700/50 p-2 rounded">{areaData.notes}</div>
+                  </div>
+  
+                  <div className="flex justify-between">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-slate-100"
+                      onClick={handleClosePopup}
+                    >
+                      Close
+                    </Button>
+                    <Button size="sm" className="bg-teal-600 hover:bg-teal-500 text-slate-100">
+                      Monitor Area
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
     )
   }
-  
