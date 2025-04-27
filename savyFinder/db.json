@@ -1,0 +1,15 @@
+{
+    "detections": {
+        "Container Ship": 3,
+        "Motorboat": 1,
+        "Oil Tanker": 4
+    },
+    "drift": {
+        "distance": 0.36009514331817627,
+        "distance_threshold": 0.571829080581665,
+        "is_drift": false,
+        "p_value": 0.00800000037997961,
+        "threshold": 0.001
+    }, 
+    "image": ""
+}
