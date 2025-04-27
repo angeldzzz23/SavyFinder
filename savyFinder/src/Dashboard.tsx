@@ -688,8 +688,8 @@ export default function Dashboard() {
           {showModelDriftAlert && (
             <div className="absolute bottom-16 right-4 z-30 transition-all duration-500 ease-in-out animate-fade-in">
               <div className="w-72 bg-slate-800/30 backdrop-blur-[2px] border border-slate-700/40 rounded-md shadow-lg overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 to-blue-500/5"></div>
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-amber-500/50"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 to-blue-500/5 pointer-events-none"></div>
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-amber-500/50 pointer-events-none"></div>
 
                 <div className="p-3 flex items-start gap-2">
                   <AlertCircle className="h-5 w-5 text-amber-400/90 mt-0.5 flex-shrink-0" />
