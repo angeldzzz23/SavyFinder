@@ -55,6 +55,7 @@ export default function Dashboard() {
   const [driftData, setDriftData] = useState(null);
   const [showDriftPopup, setShowDriftPopup] = useState(false);
   const [processedImage, setProcessedImage] = useState(null);
+  const [satelliteStream, setSatelliteStream] = useState(null);
 
   const handleNotesChange = (newNotes) => {
     setAreaData((prev) => ({
@@ -467,6 +468,15 @@ export default function Dashboard() {
             ref={imageRef}
           >
             {/* Using Next.js Image component for better image handling */}
+            {showModelDriftAlert && (
+              <div
+                className="absolute inset-0 z-20 box-border border-8 animate-pulse border-amber-400/50 pointer-events-none transition-all duration-300"
+                style={{
+                  backgroundColor: "transparent",
+                  animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                }}
+              />
+            )}
             <div className="absolute inset-0 z-0">
               {isLoading ? (
                 <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
@@ -528,13 +538,9 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 <span>MODEL STATUS:</span>
                 <span
-                  className={
-                    driftData 
-                      ? "text-amber-400"
-                      : "text-emerald-400"
-                  }
+                  className={driftData ? "text-amber-400" : "text-emerald-400"}
                 >
-                  { driftData ? "DRIFT DETECTED" : "NOMINAL"}
+                  {driftData ? "DRIFT DETECTED" : "NOMINAL"}
                 </span>
               </div>
             </div>
