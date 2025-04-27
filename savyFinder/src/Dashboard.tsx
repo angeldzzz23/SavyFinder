@@ -225,9 +225,8 @@ export default function Dashboard() {
                 <img
                     src="/cbimage.png"
                     alt="Satellite view"
-                    style={{ objectFit: "cover", opacity: 0.7, width: '100%', height: 'auto' }}
+                    style={{ objectFit: "cover", opacity: 0.7, width:  'auto', height: 'auto' }}
                     />
-                                    {/* Overlay grid pattern for military aesthetic */}
                 <div className="absolute inset-0 bg-grid-slate-800/20 z-10"></div>
               </div>
   
